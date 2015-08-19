@@ -61,4 +61,9 @@ interface UserRepositoryInterface
      * @throws NotFoundException
      */
     public function loginWithCode($code);
+
+    /**
+     * Makes the user object persistent.
+     */
+    public function persist(UserInterface $user);
 }
