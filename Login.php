@@ -23,6 +23,27 @@ class Login extends RestService
     const AUTH_EMAIL_ONLY = 'email-auth';
     const AUTH_EMAIL_PWD = 'email-plus-pwd';
 
+    /**
+     * Returns information about login status of the current session
+     */
+    public function getAction()
+    {
+        $session = $this->environment->getSession();
+        $session->activate();
+        $userId = $session->isValueSet('userid') ? $session->getValue('userid') : null;
+        $result = ['errors' => [], 'userid' => $userId];
+        $this->environment->sendJSONResult($result);
+    }
+
+    /**
+     * Logs in or registers the user with the specified information.
+     * The config entry auth.auto-register controls if unknown e-mail addresses can be used to automatically register
+     * new users.
+     * If config entry auth.needs-activation is set, an activation link is sent to the specified e-mail-address.
+     *
+     * @throws InvalidParameterException
+     * @throws NotFoundException
+     */
     public function postAction()
     {
         $request = $this->environment->getRequestHelper();
@@ -56,6 +77,9 @@ class Login extends RestService
             $id = null;
         } else {
             $id = $user->getId();
+            $session = $this->environment->getSession();
+            $session->activate();
+            $session->setValue('userid', $id);
         }
 
         $this->environment->sendJSONResult(['errors' => [], 'userid' => $id]);
