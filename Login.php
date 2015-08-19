@@ -60,11 +60,13 @@ class Login extends RestService
         $userRepository = $this->getUserRepository();
         try {
             $user = $userRepository->getByEmail($email);
+            $newUser = false;
         } catch (NotFoundException $e) {
             if ($autoRegister) {
                 $user = $this->getUser();
                 $user->setFromRequest($request);
                 $userRepository->register($user);
+                $newUser = true;
             } else {
                 throw $e;
             }
@@ -82,7 +84,11 @@ class Login extends RestService
             $session->setValue('userid', $id);
         }
 
-        $this->environment->sendJSONResult(['errors' => [], 'userid' => $id]);
+        $result = ['errors' => [], 'userid' => $id];
+        if ($newUser) {
+            $result['new_user'] = true;
+        }
+        $this->environment->sendJSONResult($result);
     }
 
     /**
