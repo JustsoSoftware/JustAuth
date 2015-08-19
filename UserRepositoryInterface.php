@@ -16,6 +16,15 @@ use justso\justapi\NotFoundException;
 interface UserRepositoryInterface
 {
     /**
+     * Returns the user identified by his id.
+     *
+     * @param int $id
+     * @return UserInterface
+     * @throws NotFoundException
+     */
+    public function getById($id);
+
+    /**
      * Returns the user identified by her e-mail.
      *
      * @param string $email
