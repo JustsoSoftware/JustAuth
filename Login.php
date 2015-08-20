@@ -9,6 +9,7 @@
 namespace justso\justauth;
 
 use justso\justapi\Bootstrap;
+use justso\justapi\DenyException;
 use justso\justapi\InvalidParameterException;
 use justso\justapi\RestService;
 use justso\justapi\NotFoundException;
@@ -61,6 +62,11 @@ class Login extends RestService
         try {
             $user = $userRepository->getByEmail($email);
             $newUser = false;
+            if ($method === self::AUTH_EMAIL_PWD) {
+                if (!$user->checkPassword($request->getParam('password', '', true))) {
+                    throw new DenyException('Password is wrong');
+                }
+            }
         } catch (NotFoundException $e) {
             if ($autoRegister) {
                 $user = $this->getUser();

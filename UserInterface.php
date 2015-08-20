@@ -45,5 +45,13 @@ interface UserInterface
     /**
      * @param boolean $active
      */
-    public function setActive($true);
+    public function setActive($active);
+
+    /**
+     * Checks if the password is correct
+     *
+     * @param $password
+     * @return bool
+     */
+    public function checkPassword($password);
 }
