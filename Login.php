@@ -65,7 +65,7 @@ class Login extends RestService
             if ($autoRegister) {
                 $user = $this->getUser();
                 $user->setFromRequest($request);
-                $userRepository->register($user);
+                $userRepository->persist($user);
                 $newUser = true;
             } else {
                 throw $e;

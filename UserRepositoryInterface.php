@@ -35,11 +35,6 @@ interface UserRepositoryInterface
 
     /**
      * @param UserInterface $user
-     */
-    public function register(UserInterface $user);
-
-    /**
-     * @param UserInterface $user
      * @param bool          $status
      */
     public function setLoginStatus(UserInterface $user, $status);
