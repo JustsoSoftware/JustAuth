@@ -20,6 +20,10 @@ use justso\justapi\testutil\TestEnvironment;
  */
 class LoginTest extends ServiceTestBase
 {
+    /**
+     * @return array
+     * @codeCoverageIgnore
+     */
     public function provideEMailOnlyParameters()
     {
         return [[ true, true ], [ true, false ], [ false, true ], [ false, false ]];
@@ -72,6 +76,18 @@ class LoginTest extends ServiceTestBase
         $this->assertJSONHeader($env);
         $result = json_decode($env->getResponseContent(), true);
         $this->assertSame(['errors' => [], 'userid' => null], $result);
+    }
+
+    /**
+     * @expectedException \justso\justapi\InvalidParameterException
+     */
+    public function testWithInvalidAuthMethod()
+    {
+        $env = $this->setupEnvironment(true, true);
+        $env->getRequestHelper()->set(['email' => 'test@justso.de', 'login-type' => 'invalid']);
+
+        $service = new Login($env);
+        $service->postAction();
     }
 
     /**
