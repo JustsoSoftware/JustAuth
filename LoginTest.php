@@ -24,6 +24,33 @@ class LoginTest extends ServiceTestBase
      * @return array
      * @codeCoverageIgnore
      */
+    public function provideUserIds()
+    {
+        return [[ null ], [ 123 ]];
+    }
+
+    /**
+     * @dataProvider provideUserIds
+     */
+    public function testGet($id)
+    {
+        $env = $this->setupEnvironment(true, true);
+        if ($id > 0) {
+            $env->getSession()->setValue('userid', $id);
+        }
+
+        $service = new Login($env);
+        $service->getAction();
+
+        $this->assertJSONHeader($env);
+        $result = json_decode($env->getResponseContent(), true);
+        $this->assertSame(['errors' => [], 'userid' => $id], $result);
+    }
+
+    /**
+     * @return array
+     * @codeCoverageIgnore
+     */
     public function provideEMailOnlyParameters()
     {
         return [[ true, true ], [ true, false ], [ false, true ], [ false, false ]];
