@@ -64,7 +64,7 @@ class LoginTest extends ServiceTestBase
     {
         $env = $this->setupEnvironment($needsActivation, $autoRegister);
 
-        $userMock = $this->mockInterface('justso\\justauth\\', 'UserInterface', $env);
+        $userMock = $this->mockInterface('justso\\justauth', 'UserInterface', $env);
         if ($autoRegister) {
             $userMock->expects($this->once())->method('setFromRequest');
             $this->checkActivationLink($needsActivation, $env, $userMock);
@@ -72,7 +72,7 @@ class LoginTest extends ServiceTestBase
             $userMock->expects($this->never())->method('setFromRequest');
             $this->setExpectedException('justso\\justapi\\NotFoundException');
         }
-        $repoMock = $this->mockInterface('justso\\justauth\\', 'UserRepositoryInterface', $env);
+        $repoMock = $this->mockInterface('justso\\justauth', 'UserRepositoryInterface', $env);
         $repoMock->expects($this->once())->method('getByEMail')->willThrowException(new NotFoundException());
 
         $service = new Login($env);
@@ -91,8 +91,8 @@ class LoginTest extends ServiceTestBase
     {
         $env = $this->setupEnvironment($needsActivation, $autoRegister);
 
-        $userMock = $this->mockInterface('justso\\justauth\\', 'UserInterface', $env);
-        $repoMock = $this->mockInterface('justso\\justauth\\', 'UserRepositoryInterface', $env);
+        $userMock = $this->mockInterface('justso\\justauth', 'UserInterface', $env);
+        $repoMock = $this->mockInterface('justso\\justauth', 'UserRepositoryInterface', $env);
         $repoMock->expects($this->once())
             ->method('getByEMail')->with('test@justso.de')->will($this->returnValue($userMock));
         $this->checkActivationLink($needsActivation, $env, $userMock);
@@ -147,8 +147,8 @@ class LoginTest extends ServiceTestBase
      */
     private function checkActivationLink($needsActivation, $env, $userMock)
     {
-        $notiMock = $this->mockInterface('justso\\justauth\\', 'LoginNotificatorInterface', $env);
-        $actiMock = $this->mockInterface('justso\\justauth\\', 'UserActivatorInterface', $env);
+        $notiMock = $this->mockInterface('justso\\justauth', 'LoginNotificatorInterface', $env);
+        $actiMock = $this->mockInterface('justso\\justauth', 'UserActivatorInterface', $env);
         if ($needsActivation) {
             $notiMock->expects($this->once())->method('sendActivationLink')->with($userMock);
             $actiMock->expects($this->once())->method('setInfo');
