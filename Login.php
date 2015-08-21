@@ -11,6 +11,7 @@ namespace justso\justauth;
 use justso\justapi\Bootstrap;
 use justso\justapi\DenyException;
 use justso\justapi\InvalidParameterException;
+use justso\justapi\RequestHelper;
 use justso\justapi\RestService;
 use justso\justapi\NotFoundException;
 
@@ -21,19 +22,13 @@ use justso\justapi\NotFoundException;
  */
 class Login extends RestService
 {
-    const AUTH_EMAIL_ONLY = 'email-auth';
-    const AUTH_EMAIL_PWD = 'email-plus-pwd';
-
     /**
      * Returns information about login status of the current session
      */
     public function getAction()
     {
-        $session = $this->environment->getSession();
-        $session->activate();
-        $userId = $session->isValueSet('userid') ? $session->getValue('userid') : null;
-        $result = ['errors' => [], 'userid' => $userId];
-        $this->environment->sendJSONResult($result);
+        $authenticator = $this->getAuthenticator();
+        $this->environment->sendJSONResult($this->getAuthInfo($authenticator));
     }
 
     /**
@@ -47,108 +42,36 @@ class Login extends RestService
      */
     public function postAction()
     {
-        $request = $this->environment->getRequestHelper();
-        $email = $request->getEMailParam('email');
+        $authenticator = $this->getAuthenticator();
+        $authenticator->auth();
+        $this->environment->sendJSONResult($this->getAuthInfo($authenticator));
+    }
 
-        $method = $request->getIdentifierParam('login-type', 'email-auth', true);
-        $authConf = $this->getAuthConf();
-        $autoRegister = !empty($authConf['auto-register']);
-        $allowedAuths = $authConf['allowedMethods'];
-        if (!in_array($method, $allowedAuths)) {
-            throw new InvalidParameterException('Unknown auth method');
+    /**
+     * @param Authenticator $authenticator
+     * @return array
+     */
+    private function getAuthInfo(Authenticator $authenticator)
+    {
+        $result = [
+            'errors' => [],
+            'userid' => $authenticator->getUserId(),
+        ];
+        if ($authenticator->isActivationPending()) {
+            $result['pending_actication'] = true;
         }
-
-        $userRepository = $this->getUserRepository();
-        try {
-            $user = $userRepository->getByEmail($email);
-            $newUser = false;
-            if ($method === self::AUTH_EMAIL_PWD) {
-                if (!$user->checkPassword($request->getParam('password', '', true))) {
-                    throw new DenyException('Password is wrong');
-                }
-            }
-        } catch (NotFoundException $e) {
-            if ($autoRegister) {
-                $user = $this->getUser();
-                $user->setFromRequest($request);
-                $userRepository->persist($user);
-                $newUser = true;
-            } else {
-                throw $e;
-            }
-        }
-
-        if (!empty($authConf['needs-activation'])) {
-            $code = $this->sendActivationLink($userRepository, $user);
-            $activator = $this->environment->newInstanceOf('UserActivatorInterface');
-            $activator->setInfo($code, $user, $request);
-            $id = null;
-        } else {
-            $id = $user->getId();
-            $session = $this->environment->getSession();
-            $session->activate();
-            $session->setValue('userid', $id);
-        }
-
-        $result = ['errors' => [], 'userid' => $id];
-        if ($newUser) {
+        if ($authenticator->isNewUser()) {
             $result['new_user'] = true;
+            return $result;
         }
-        $this->environment->sendJSONResult($result);
+        return $result;
     }
 
     /**
-     * Sends an activation link to the specified user.
-     *
-     * @param UserRepositoryInterface $repo
-     * @param UserInterface           $user
-     * @return string
+     * @return Authenticator
      */
-    private function sendActivationLink(UserRepositoryInterface $repo, UserInterface $user)
+    private function getAuthenticator()
     {
-        $code = md5(microtime());
-        $repo->setAccessCode($user->getEMail(), $code);
-        $link = Bootstrap::getInstance()->getApiUrl() . '/activate?c=' . $code;
-        $mailer = $this->getLoginNotificator();
-        $mailer->sendActivationLink($user, $link);
-        return $code;
-    }
-
-    /**
-     * @return LoginNotificatorInterface
-     */
-    private function getLoginNotificator()
-    {
-        return $this->environment->newInstanceOf('LoginNotificatorInterface');
-    }
-
-    /**
-     * @return UserRepositoryInterface
-     */
-    private function getUserRepository()
-    {
-        return $this->environment->newInstanceOf('UserRepositoryInterface');
-    }
-
-    /**
-     * @return UserInterface
-     */
-    private function getUser()
-    {
-        return $this->environment->newInstanceOf('UserInterface');
-    }
-
-    private function getAuthConf()
-    {
-        $config = Bootstrap::getInstance()->getConfiguration();
-        if (!isset($config['auth'])) {
-            return [
-                'allowedMethods'   => [self::AUTH_EMAIL_ONLY],
-                'auto-register'    => true,
-                'needs-activation' => true,
-            ];
-        } else {
-            return $config['auth'];
-        }
+        return $this->environment->newInstanceOf('Authenticator');
     }
 }

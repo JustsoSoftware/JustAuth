@@ -34,28 +34,13 @@ interface UserRepositoryInterface
     public function getByEmail($email);
 
     /**
-     * @param UserInterface $user
-     * @param bool          $status
-     */
-    public function setLoginStatus(UserInterface $user, $status);
-
-    /**
-     * Registers an access code for the given e-mail address.
-     * If the e-mail address not yet known, a new user is created.
-     *
-     * @param string $email
-     * @param string $code
-     */
-    public function setAccessCode($email, $code);
-
-    /**
      * Logs in a user with the given access code.
      *
      * @param string $code
      * @return UserInterface
      * @throws NotFoundException
      */
-    public function loginWithCode($code);
+    public function getByAccessCode($code);
 
     /**
      * Makes the user object persistent.

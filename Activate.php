@@ -10,29 +10,22 @@ namespace justso\justauth;
 
 use justso\justapi\Bootstrap;
 use justso\justapi\DenyException;
+use justso\justapi\NotFoundException;
 use justso\justapi\RestService;
 
+/**
+ * This service is called when the user clicks on an activation link.
+ */
 class Activate extends RestService
 {
     public function getAction()
     {
-        $request = $this->environment->getRequestHelper();
-        $code = $request->getHexParam('c');
-        $session = $this->environment->getSession();
-        $session->activate();
-        if ($session->isValueSet('activationCode') && $code === $session->getValue('activationCode')) {
-            $userRepo = $this->getUserRepository();
-            $user = $userRepo->loginWithCode($code);
-
-            if (!$user->isActive()) {
-                $activator = $this->getUserActivator();
-                $activator->activateUser($user);
-            }
-
-            $page = $session->isValueSet('currentPage') ? $session->getValue('currentPage') : '';
-            $url = Bootstrap::getInstance()->getWebAppUrl() . '/' . $page;
-            $this->environment->sendHeader('Location: ' . $url);
-        } else {
+        try {
+            $code = $this->environment->getRequestHelper()->getHexParam('c');
+            $authenticator = $this->getAuthenticator();
+            $url = $authenticator->activate($code);
+            $this->environment->sendHeader('Location: ' . Bootstrap::getInstance()->getWebAppUrl() . '/' . $url);
+        } catch (NotFoundException $e) {
             throw new DenyException(
                 "Invalid Activation Code\n\nMake sure you use the same browser for activating as " .
                 "the one you used for logging in. Try copy and paste the link from the e-mail to your browser."
@@ -41,18 +34,10 @@ class Activate extends RestService
     }
 
     /**
-     * @return UserRepositoryInterface
+     * @return Authenticator
      */
-    private function getUserRepository()
+    private function getAuthenticator()
     {
-        return $this->environment->newInstanceOf('UserRepositoryInterface');
-    }
-
-    /**
-     * @return UserActivatorInterface
-     */
-    private function getUserActivator()
-    {
-        return $this->environment->newInstanceOf('UserActivatorInterface');
+        return $this->environment->newInstanceOf('Authenticator');
     }
 }

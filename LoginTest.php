@@ -8,8 +8,6 @@
 
 namespace justso\justauth;
 
-use justso\justapi\Bootstrap;
-use justso\justapi\NotFoundException;
 use justso\justapi\testutil\ServiceTestBase;
 use justso\justapi\testutil\TestEnvironment;
 
@@ -18,143 +16,92 @@ use justso\justapi\testutil\TestEnvironment;
  *
  * @package justso\innolab\test
  */
-class LoginTest extends ServiceTestBase
+class LoginServiceTest extends ServiceTestBase
 {
     /**
      * @return array
      * @codeCoverageIgnore
      */
-    public function provideUserIds()
+    public function provideUseCases()
     {
-        return [[ null ], [ 123 ]];
+        return [                    // In case of GET                       In case of POST
+            [ null, null, null ],   // not logged in                        Wrong credentials
+            [ 123, null, null ],    // regular authenticated user           Regular login
+            [ 123, true, true ],    // new user, not yet activated          New registration, not yet activated
+            [ 123, null, true ],    // new user, no activation required     New registration, no activation required
+        ];
     }
 
     /**
-     * @dataProvider provideUserIds
+     * @param int $id
+     * @param bool $activationPending
+     * @param bool $newUser
+     * @dataProvider provideUseCases
      */
-    public function testGet($id)
+    public function testGet($id, $activationPending, $newUser)
     {
-        $env = $this->setupEnvironment(true, true);
-        if ($id > 0) {
-            $env->getSession()->setValue('userid', $id);
-        }
-
+        $env = $this->setupAuthenticator($id, $activationPending, $newUser);
         $service = new Login($env);
         $service->getAction();
-
-        $this->assertJSONHeader($env);
-        $result = json_decode($env->getResponseContent(), true);
-        $this->assertSame(['errors' => [], 'userid' => $id], $result);
+        $this->checkResult($env, $id, $activationPending, $newUser);
     }
 
     /**
-     * @return array
-     * @codeCoverageIgnore
+     * @param int $id
+     * @param bool $activationPending
+     * @param bool $newUser
+     * @dataProvider provideUseCases
      */
-    public function provideEMailOnlyParameters()
+    public function testLogin($id, $activationPending, $newUser)
     {
-        return [[ true, true ], [ true, false ], [ false, true ], [ false, false ]];
-    }
-
-    /**
-     * @param bool $needsActivation
-     * @dataProvider provideEMailOnlyParameters
-     */
-    public function testLoginNewUserWithEMailOnly($needsActivation, $autoRegister)
-    {
-        $env = $this->setupEnvironment($needsActivation, $autoRegister);
-
-        $userMock = $this->mockInterface('justso\\justauth', 'UserInterface', $env);
-        if ($autoRegister) {
-            $userMock->expects($this->once())->method('setFromRequest');
-            $this->checkActivationLink($needsActivation, $env, $userMock);
-        } else {
-            $userMock->expects($this->never())->method('setFromRequest');
-            $this->setExpectedException('justso\\justapi\\NotFoundException');
-        }
-        $repoMock = $this->mockInterface('justso\\justauth', 'UserRepositoryInterface', $env);
-        $repoMock->expects($this->once())->method('getByEMail')->willThrowException(new NotFoundException());
-
+        $env = $this->setupAuthenticator($id, $activationPending, $newUser);
         $service = new Login($env);
         $service->postAction();
-
-        $this->assertJSONHeader($env);
-        $result = json_decode($env->getResponseContent(), true);
-        $this->assertSame(['errors' => [], 'userid' => null, 'new_user' => true], $result);
+        $this->checkResult($env, $id, $activationPending, $newUser);
     }
 
     /**
-     * @param bool $needsActivation
-     * @dataProvider provideEMailOnlyParameters
-     */
-    public function testLoginExistingUserWithEMailOnly($needsActivation, $autoRegister)
-    {
-        $env = $this->setupEnvironment($needsActivation, $autoRegister);
-
-        $userMock = $this->mockInterface('justso\\justauth', 'UserInterface', $env);
-        $repoMock = $this->mockInterface('justso\\justauth', 'UserRepositoryInterface', $env);
-        $repoMock->expects($this->once())
-            ->method('getByEMail')->with('test@justso.de')->will($this->returnValue($userMock));
-        $this->checkActivationLink($needsActivation, $env, $userMock);
-
-        $service = new Login($env);
-        $service->postAction();
-
-        $this->assertJSONHeader($env);
-        $result = json_decode($env->getResponseContent(), true);
-        $this->assertSame(['errors' => [], 'userid' => null], $result);
-    }
-
-    /**
-     * @expectedException \justso\justapi\InvalidParameterException
-     */
-    public function testWithInvalidAuthMethod()
-    {
-        $env = $this->setupEnvironment(true, true);
-        $env->getRequestHelper()->set(['email' => 'test@justso.de', 'login-type' => 'invalid']);
-
-        $service = new Login($env);
-        $service->postAction();
-    }
-
-    /**
+     * @param int $id
+     * @param bool $activationPending
+     * @param bool $newUser
      * @return TestEnvironment
      */
-    private function setupEnvironment($needsActivation, $autoRegister)
+    private function setupAuthenticator($id, $activationPending, $newUser)
     {
-        $env = $this->createTestEnvironment(['email' => 'test@justso.de']);
-        $config = [
-            'environments' => [
-                'test' => [
-                    'approot' => '/my/approot',
-                    'apiurl' => 'http://test.com/api',
-                ]
-            ],
-            'auth' => [
-                'allowedMethods' => [Login::AUTH_EMAIL_ONLY],
-                'auto-register' => $autoRegister,
-                'needs-activation' => $needsActivation
-            ]
-        ];
-        Bootstrap::getInstance()->setTestConfiguration('/my/approot', $config);
+        $env = $this->createTestEnvironment();
+        $authenticator = $this->getMock('justso\\justauth\\PasswordAuthenticator', [], [], '', false);
+        $authenticator->expects($this->once())->method('getUserId')->willReturn($id);
+        $authenticator->expects($this->once())->method('isActivationPending')->willReturn($activationPending);
+        $authenticator->expects($this->once())->method('isNewUser')->willReturn($newUser);
+        $env->setDICEntry('Authenticator', function () use ($authenticator) {
+            return $authenticator;
+        });
         return $env;
     }
 
     /**
-     * @param $needsActivation
-     * @param $env
-     * @param $userMock
+     * @param $result
+     * @param $key
+     * @return null
      */
-    private function checkActivationLink($needsActivation, $env, $userMock)
+    private function arrayValue($result, $key)
     {
-        $notiMock = $this->mockInterface('justso\\justauth', 'LoginNotificatorInterface', $env);
-        $actiMock = $this->mockInterface('justso\\justauth', 'UserActivatorInterface', $env);
-        if ($needsActivation) {
-            $notiMock->expects($this->once())->method('sendActivationLink')->with($userMock);
-            $actiMock->expects($this->once())->method('setInfo');
-        } else {
-            $notiMock->expects($this->never())->method('sendActivationLink');
-            $actiMock->expects($this->never())->method('setInfo');
-        }
+        return isset($result[$key]) ? $result[$key] : null;
+    }
+
+    /**
+     * @param TestEnvironment $env
+     * @param int $id
+     * @param bool $activationPending
+     * @param bool $newUser
+     */
+    private function checkResult(TestEnvironment $env, $id, $activationPending, $newUser)
+    {
+        $this->assertJSONHeader($env);
+        $result = json_decode($env->getResponseContent(), true);
+        $this->assertSame([], $result['errors']);
+        $this->assertSame($id, $result['userid']);
+        $this->assertSame($activationPending, $this->arrayValue($result, 'pending_actication'));
+        $this->assertSame($newUser, $this->arrayValue($result, 'new_user'));
     }
 }

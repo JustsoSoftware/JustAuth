@@ -54,4 +54,32 @@ interface UserInterface
      * @return bool
      */
     public function checkPassword($password);
+
+    /**
+     * Returns the access token set for this user or null if there is none.
+     *
+     * @return string
+     */
+    public function getToken();
+
+    /**
+     * Sets an access token for this user.
+     *
+     * @param string $code
+     */
+    public function setToken($code);
+
+    /**
+     * Sets the destination for access via the access token.
+     *
+     * @param string $destination
+     */
+    public function setDestination($destination);
+
+    /**
+     * Returns the destination of an access via the current access token.
+     *
+     * @return string
+     */
+    public function getDestination();
 }
