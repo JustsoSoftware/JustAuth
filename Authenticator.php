@@ -11,7 +11,6 @@ namespace justso\justauth;
 use justso\justapi\Bootstrap;
 use justso\justapi\NotFoundException;
 use justso\justapi\RequestHelper;
-use justso\justapi\SessionInterface;
 use justso\justapi\SystemEnvironmentInterface;
 
 /**
@@ -50,6 +49,10 @@ abstract class Authenticator
     {
         $this->env = $env;
         $this->needsActivation = $this->getAuthConf('needs-activation');
+        $session = $this->env->getSession();
+        if ($session->isValueSet('user')) {
+            $this->user = $session->getValue('user');
+        }
     }
 
     /**
@@ -86,7 +89,7 @@ abstract class Authenticator
             $userRepository->persist($this->user);
         }
 
-        $this->env->getSession()->setValue('userid', $this->user === null ? null : $this->user->getId());
+        $this->env->getSession()->setValue('user', $this->user);
     }
 
     /**
@@ -97,11 +100,11 @@ abstract class Authenticator
     public function isAuth()
     {
         $session = $this->env->getSession();
-        if (!$session->isValueSet('userid')) {
+        if (!$session->isValueSet('user')) {
             return false;
         }
-        $user = $this->getUserRepository()->getById($session->getValue('userid'));
-        return $user->isActive();
+        $this->user = $session->getValue('user');
+        return $this->user->isActive();
     }
 
     /**
@@ -120,6 +123,7 @@ abstract class Authenticator
         $this->user->setToken(null);
         $this->user->setDestination(null);
         $userRepository->persist($this->user);
+        $this->env->getSession()->setValue('user', $this->user);
         return $url;
     }
 
@@ -209,7 +213,7 @@ abstract class Authenticator
      */
     public function isActivationPending()
     {
-        return $this->user !== null ? $this->needsActivation : null;
+        return $this->user !== null ? $this->user->isActive() : null;
     }
 
     /**
