@@ -74,19 +74,14 @@ abstract class Authenticator
         $request = $this->env->getRequestHelper();
         try {
             $this->findUser($request, $userRepository);
+            if ($this->needsActivation) {
+                $this->requestActivation($this->user, $request);
+            }
         } catch (NotFoundException $e) {
             $this->newUser = true;
-        }
-
-        if ($this->user === null && $this->getAuthConf('auto-register')) {
-            $this->createNewUser($request);
-            $userRepository->persist($this->user);
-            $this->newUser = true;
-        }
-
-        if ($this->user !== null && $this->needsActivation) {
-            $this->requestActivation($this->user, $request);
-            $userRepository->persist($this->user);
+            if ($this->getAuthConf('auto-register')) {
+                $this->registerNewUser($request, $userRepository);
+            }
         }
 
         $this->env->getSession()->setValue('user', $this->user);
@@ -122,6 +117,7 @@ abstract class Authenticator
         $this->getUserActivator()->activateUser($this->user);
         $this->user->setToken(null);
         $this->user->setDestination(null);
+        $this->user->setActive(true);
         $userRepository->persist($this->user);
         $this->env->getSession()->setValue('user', $this->user);
         return $url;
@@ -175,13 +171,20 @@ abstract class Authenticator
     }
 
     /**
-     * Creates a new user having the data from the $request
+     * @param RequestHelper $request
+     * @param UserRepositoryInterface $userRepository
      */
-    private function createNewUser(RequestHelper $request)
+    private function registerNewUser(RequestHelper $request, UserRepositoryInterface $userRepository)
     {
         $this->user = $this->env->newInstanceOf('UserInterface');
         $this->user->setFromRequest($request);
         $this->newUser = true;
+        if ($this->needsActivation) {
+            $this->requestActivation($this->user, $request);
+        } else {
+            $this->user->setActive(true);
+        }
+        $userRepository->persist($this->user);
     }
 
     /**
@@ -201,7 +204,10 @@ abstract class Authenticator
     }
 
     /**
-     * @return bool
+     * If a user is authenticated, the return value specifies if the user has just registered (in the same request).
+     * If no user is authenticated, the return value is null.
+     *
+     * @return bool|null
      */
     public function isNewUser()
     {
@@ -209,7 +215,10 @@ abstract class Authenticator
     }
 
     /**
-     * @return bool
+     * If a user is authenticated, the return value specifies if there is an activation pending.
+     * If no user is authenticated, the return value is null.
+     *
+     * @return bool|null
      */
     public function isActivationPending()
     {
