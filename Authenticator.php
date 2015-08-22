@@ -59,7 +59,7 @@ abstract class Authenticator
      * @param UserRepositoryInterface $userRepository
      * @throws NotFoundException
      */
-    protected abstract function findUser(RequestHelper $request, UserRepositoryInterface $userRepository);
+    abstract protected function findUser(RequestHelper $request, UserRepositoryInterface $userRepository);
 
     /**
      * Authenticates a user via the provided credentials.
