@@ -99,7 +99,7 @@ abstract class Authenticator
             return false;
         }
         $this->user = $session->getValue('user');
-        return $this->user->isActive();
+        return !$this->needsActivation || $this->user->isActive();
     }
 
     /**

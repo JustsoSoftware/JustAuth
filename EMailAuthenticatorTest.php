@@ -96,6 +96,28 @@ class TestEMailAuthenticator extends ServiceTestBase
     }
 
     /**
+     * @param bool $needsActivation
+     * @dataProvider provideNeedsActivation
+     */
+    public function testIsAuthRespectsNeedsActivation($needsActivation)
+    {
+        $env = $this->setupEnvironment($needsActivation, false);
+        $user = $this->mockInterface('justso\\justauth', 'UserInterface', $env);
+        $user->expects($this->any())->method('getId')->willReturn(123);
+        if ($needsActivation) {
+            $user->expects($this->once())->method('isActive')->willReturn(false);
+        } else {
+            $user->expects($this->never())->method('isActive');
+        }
+        $env->getSession()->setValue('user', $user);
+
+        $authenticator = new EMailAuthenticator($env);
+        $this->assertSame(!$needsActivation, $authenticator->isAuth());
+    }
+
+    /**
+     * @param bool $needsActivation
+     * @param bool $autoRegister
      * @return TestEnvironment
      */
     private function setupEnvironment($needsActivation, $autoRegister)
@@ -118,11 +140,11 @@ class TestEMailAuthenticator extends ServiceTestBase
     }
 
     /**
-     * @param $needsActivation
-     * @param $env
-     * @param $user
+     * @param bool            $needsActivation
+     * @param TestEnvironment $env
+     * @param UserInterface   $user
      */
-    private function checkActivationLink($needsActivation, $env, $user)
+    private function checkActivationLink($needsActivation, TestEnvironment $env, UserInterface $user)
     {
         $notiMock = $this->mockInterface('justso\\justauth', 'LoginNotificatorInterface', $env);
         $actiMock = $this->mockInterface('justso\\justauth', 'UserActivatorInterface', $env);
