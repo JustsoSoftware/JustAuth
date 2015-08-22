@@ -92,11 +92,11 @@ abstract class Authenticator
     /**
      * Checks if the user is authenticated.
      *
-     * @param SessionInterface $session
      * @return bool
      */
-    public function isAuth(SessionInterface $session)
+    public function isAuth()
     {
+        $session = $this->env->getSession();
         if (!$session->isValueSet('userid')) {
             return false;
         }
@@ -186,6 +186,14 @@ abstract class Authenticator
     public function getUserId()
     {
         return $this->user !== null ? $this->user->getId() : null;
+    }
+
+    /**
+     * @return UserInterface
+     */
+    public function getUser()
+    {
+        return $this->user;
     }
 
     /**
