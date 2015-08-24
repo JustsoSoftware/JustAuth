@@ -36,6 +36,12 @@ abstract class Authenticator
     protected $user = null;
 
     /**
+     * Indicates that $this->user is only a clone of a 'real' user (normally coming from reading from the session)
+     * @var bool
+     */
+    protected $userIsCloned;
+
+    /**
      * @var bool
      */
     protected $newUser = null;
@@ -52,6 +58,7 @@ abstract class Authenticator
         $session = $this->env->getSession();
         if ($session->isValueSet('user')) {
             $this->user = $session->getValue('user');
+            $this->userIsCloned = true;
         }
     }
 
@@ -84,6 +91,7 @@ abstract class Authenticator
             }
         }
 
+        $this->userIsCloned = false;
         $this->env->getSession()->setValue('user', $this->user);
     }
 
@@ -99,6 +107,7 @@ abstract class Authenticator
             return false;
         }
         $this->user = $session->getValue('user');
+        $this->userIsCloned = true;
         return !$this->needsActivation || $this->user->isActive();
     }
 
@@ -119,6 +128,7 @@ abstract class Authenticator
         $this->user->setDestination(null);
         $this->user->setActive(true);
         $userRepository->persist($this->user);
+        $this->userIsCloned = false;
         $this->env->getSession()->setValue('user', $this->user);
         return $url;
     }
@@ -196,10 +206,19 @@ abstract class Authenticator
     }
 
     /**
+     * Returns the user object for the current user from the repository.
+     *
      * @return UserInterface
      */
     public function getUser()
     {
+        if ($this->user === null) {
+            return null;
+        } elseif ($this->userIsCloned) {
+            $userRepo = $this->env->newInstanceOf('UserRepositoryInterface');
+            $this->user = $userRepo->getById($this->user->getId());
+            $this->userIsCloned = false;
+        }
         return $this->user;
     }
 
