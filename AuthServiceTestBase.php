@@ -34,7 +34,11 @@ class AuthServiceTestBase extends ServiceTestBase
      */
     protected function setAuthenticatedUser(TestEnvironment $env, UserInterface $user)
     {
-        $env->setDICEntry('Authenticator', 'justso\justauth\EMailAuthenticator');
+        $authenticator = $this->getMockForAbstractClass('Authenticator');
+        $authenticator->expects($this->any())->method('isAuth')->willReturn(true);
+        $authenticator->expects($this->any())->method('getUser')->willReturn($user);
+        $authenticator->expects($this->any())->method('getUserId')->willReturn($user->getId());
+        $env->setDICEntry('Authenticator', $authenticator);
         $env->getSession()->setValue('user', $user);
     }
 }
