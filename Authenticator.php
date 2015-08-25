@@ -83,6 +83,9 @@ abstract class Authenticator
             $this->findUser($request, $userRepository);
             if ($this->needsActivation) {
                 $this->requestActivation($this->user, $request);
+                if (!$this->getAuthConf('needs-activation')) {
+                    $this->user = null;
+                }
             }
         } catch (NotFoundException $e) {
             $this->newUser = true;
