@@ -144,9 +144,11 @@ abstract class Authenticator
      */
     private function requestActivation(UserInterface $user, RequestHelper $request)
     {
+        $userRepository = $this->getUserRepository();
         $code = md5(microtime());
         $user->setToken($code);
         $user->setDestination($request->getParam('page', '', true));
+        $userRepository->persist($this->user);
 
         $link = Bootstrap::getInstance()->getApiUrl() . '/activate?c=' . $code;
         $mailer = $this->getLoginNotificator();
