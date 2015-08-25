@@ -21,7 +21,7 @@ class PasswordAuthenticator extends Authenticator
         $password = $request->getParam('password', '', true);
         if ($password === '') {
             $this->needsActivation = true;
-        } else if ($this->user->checkPassword($password)) {
+        } elseif ($this->user->checkPassword($password)) {
             $this->newUser = false;
         } else {
             $this->user = null;
