@@ -8,10 +8,7 @@
 
 namespace justso\justauth;
 
-use justso\justapi\Bootstrap;
-use justso\justapi\DenyException;
 use justso\justapi\InvalidParameterException;
-use justso\justapi\RequestHelper;
 use justso\justapi\RestService;
 use justso\justapi\NotFoundException;
 
@@ -53,16 +50,21 @@ class Login extends RestService
      */
     private function getAuthInfo(Authenticator $authenticator)
     {
+        $activationPending = $authenticator->isActivationPending();
+        $newUser = $authenticator->isNewUser();
+
         $result = [
             'errors' => [],
-            'userid' => $authenticator->getUserId(),
+            'userid' => null
         ];
-        if ($authenticator->isActivationPending()) {
+        if ($newUser) {
+            $result['new_user'] = true;
+        }
+        if ($activationPending) {
             $result['pending_actication'] = true;
         }
-        if ($authenticator->isNewUser()) {
-            $result['new_user'] = true;
-            return $result;
+        if (!$activationPending || $newUser) {
+            $result['userid'] = $authenticator->getUserId();
         }
         return $result;
     }
