@@ -38,6 +38,8 @@ class AuthServiceTestBase extends ServiceTestBase
         $authenticator->expects($this->any())->method('isAuth')->willReturn(true);
         $authenticator->expects($this->any())->method('getUser')->willReturn($user);
         $authenticator->expects($this->any())->method('getUserId')->willReturn($user->getId());
+        $info = ['errors' => [], 'userid' => $user->getId()];
+        $authenticator->expects($this->any())->method('getAuthInfo')->willReturn($info);
         $env->setDICEntry('Authenticator', $authenticator);
         $env->getSession()->setValue('user', $user);
     }
