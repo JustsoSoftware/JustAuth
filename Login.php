@@ -61,7 +61,7 @@ class Login extends RestService
             $result['new_user'] = true;
         }
         if ($activationPending) {
-            $result['pending_actication'] = true;
+            $result['pending_activation'] = true;
         }
         if (!$activationPending || $newUser) {
             $result['userid'] = $authenticator->getUserId();
