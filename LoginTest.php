@@ -69,10 +69,15 @@ class LoginServiceTest extends ServiceTestBase
     private function setupAuthenticator($id, $activationPending, $newUser)
     {
         $env = $this->createTestEnvironment();
+        $info = ['errors' => [], 'userid' => $id];
+        if ($activationPending) {
+            $info['pending_activation'] = true;
+        }
+        if ($newUser) {
+            $info['new_user'] = true;
+        }
         $authenticator = $this->getMock('justso\\justauth\\PasswordAuthenticator', [], [], '', false);
-        $authenticator->expects($this->once())->method('getUserId')->willReturn($id);
-        $authenticator->expects($this->once())->method('isActivationPending')->willReturn($activationPending);
-        $authenticator->expects($this->once())->method('isNewUser')->willReturn($newUser);
+        $authenticator->expects($this->once())->method('getAuthInfo')->willReturn($info);
         $env->setDICEntry('Authenticator', function () use ($authenticator) {
             return $authenticator;
         });
@@ -101,7 +106,7 @@ class LoginServiceTest extends ServiceTestBase
         $result = json_decode($env->getResponseContent(), true);
         $this->assertSame([], $result['errors']);
         $this->assertSame($id, $result['userid']);
-        $this->assertSame($activationPending, $this->arrayValue($result, 'pending_actication'));
+        $this->assertSame($activationPending, $this->arrayValue($result, 'pending_activation'));
         $this->assertSame($newUser, $this->arrayValue($result, 'new_user'));
     }
 }
