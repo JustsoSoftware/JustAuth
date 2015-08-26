@@ -243,7 +243,7 @@ abstract class Authenticator
      */
     public function isActivationPending()
     {
-        return $this->user !== null ? $this->user->isActive() : null;
+        return $this->user !== null ? $this->user->getToken() != '' : null;
     }
 
     /**
