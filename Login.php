@@ -25,7 +25,7 @@ class Login extends RestService
     public function getAction()
     {
         $authenticator = $this->getAuthenticator();
-        $this->environment->sendJSONResult($this->getAuthInfo($authenticator));
+        $this->environment->sendJSONResult($authenticator->getAuthInfo());
     }
 
     /**
@@ -41,32 +41,7 @@ class Login extends RestService
     {
         $authenticator = $this->getAuthenticator();
         $authenticator->auth();
-        $this->environment->sendJSONResult($this->getAuthInfo($authenticator));
-    }
-
-    /**
-     * @param Authenticator $authenticator
-     * @return array
-     */
-    private function getAuthInfo(Authenticator $authenticator)
-    {
-        $activationPending = $authenticator->isActivationPending();
-        $newUser = $authenticator->isNewUser();
-
-        $result = [
-            'errors' => [],
-            'userid' => null
-        ];
-        if ($newUser) {
-            $result['new_user'] = true;
-        }
-        if ($activationPending) {
-            $result['pending_activation'] = true;
-        }
-        if (!$activationPending || $newUser) {
-            $result['userid'] = $authenticator->getUserId();
-        }
-        return $result;
+        $this->environment->sendJSONResult($authenticator->getAuthInfo());
     }
 
     /**

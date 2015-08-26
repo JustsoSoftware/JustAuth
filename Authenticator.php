@@ -269,4 +269,30 @@ abstract class Authenticator
     {
         return $this->env->newInstanceOf('UserActivatorInterface');
     }
+
+    /**
+     * Returns an information structure containing data about the current user
+     *
+     * @return array
+     */
+    public function getAuthInfo()
+    {
+        $activationPending = $this->isActivationPending();
+        $newUser = $this->isNewUser();
+
+        $result = [
+            'errors' => [],
+            'userid' => null
+        ];
+        if ($newUser) {
+            $result['new_user'] = true;
+        }
+        if ($activationPending) {
+            $result['pending_activation'] = true;
+        }
+        if (!$activationPending || $newUser) {
+            $result['userid'] = $this->getUserId();
+        }
+        return $result;
+    }
 }
