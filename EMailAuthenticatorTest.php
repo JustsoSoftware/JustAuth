@@ -36,7 +36,7 @@ class TestEMailAuthenticator extends ServiceTestBase
         $env = $this->setupEnvironment($needsActivation, false);
         $user = $this->mockInterface('justso\\justauth', 'UserInterface', $env);
         $user->expects($this->any())->method('getId')->willReturn(123);
-        $user->expects($this->once())->method('isActive')->willReturn($needsActivation);
+        $user->expects($this->once())->method('getToken')->willReturn($needsActivation);
         $user->expects($this->never())->method('setFromRequest');
         $repo = $this->mockInterface('justso\\justauth', 'UserRepositoryInterface', $env);
         $repo->expects($this->once())->method('getByEmail')->with('test@justso.de')->willReturn($user);
@@ -59,7 +59,7 @@ class TestEMailAuthenticator extends ServiceTestBase
         $env = $this->setupEnvironment($needsActivation, true);
         $user = $this->mockInterface('justso\\justauth', 'UserInterface', $env);
         $user->expects($this->any())->method('getId')->willReturn(123);
-        $user->expects($this->once())->method('isActive')->willReturn($needsActivation);
+        $user->expects($this->once())->method('getToken')->willReturn($needsActivation);
         $user->expects($this->once())->method('setFromRequest');
         $repo = $this->mockInterface('justso\\justauth', 'UserRepositoryInterface', $env);
         $repo->expects($this->once())->method('getByEMail')->willThrowException(new NotFoundException());
@@ -105,9 +105,9 @@ class TestEMailAuthenticator extends ServiceTestBase
         $user = $this->mockInterface('justso\\justauth', 'UserInterface', $env);
         $user->expects($this->any())->method('getId')->willReturn(123);
         if ($needsActivation) {
-            $user->expects($this->once())->method('isActive')->willReturn(false);
+            $user->expects($this->once())->method('getToken')->willReturn('');
         } else {
-            $user->expects($this->never())->method('isActive');
+            $user->expects($this->never())->method('getToken');
         }
         $env->getSession()->setValue('user', $user);
 

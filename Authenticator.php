@@ -108,7 +108,7 @@ abstract class Authenticator
         }
         $this->user = $session->getValue('user');
         $this->userIsCloned = true;
-        return !$this->needsActivation || $this->user->isActive();
+        return !$this->needsActivation || $this->user->getToken() != '';
     }
 
     /**
