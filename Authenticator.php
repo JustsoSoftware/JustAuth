@@ -102,13 +102,10 @@ abstract class Authenticator
      */
     public function isAuth()
     {
-        $session = $this->env->getSession();
-        if (!$session->isValueSet('user')) {
+        if ($this->user === null) {
             return false;
         }
-        $this->user = $session->getValue('user');
-        $this->userIsCloned = true;
-        return !$this->needsActivation || $this->user->getToken() != '';
+        return !$this->needsActivation || $this->user->getToken() == '';
     }
 
     /**

@@ -112,7 +112,19 @@ class TestEMailAuthenticator extends ServiceTestBase
         $env->getSession()->setValue('user', $user);
 
         $authenticator = new EMailAuthenticator($env);
-        $this->assertSame(!$needsActivation, $authenticator->isAuth());
+        $this->assertTrue($authenticator->isAuth());
+    }
+
+    public function testIsAuthRequiresActivation()
+    {
+        $env = $this->setupEnvironment(true, false);
+        $user = $this->mockInterface('justso\\justauth', 'UserInterface', $env);
+        $user->expects($this->any())->method('getId')->willReturn(123);
+        $user->expects($this->once())->method('getToken')->willReturn('abc');
+        $env->getSession()->setValue('user', $user);
+
+        $authenticator = new EMailAuthenticator($env);
+        $this->assertFalse($authenticator->isAuth());
     }
 
     /**
