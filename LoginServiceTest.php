@@ -76,7 +76,7 @@ class LoginServiceTest extends ServiceTestBase
         if ($newUser) {
             $info['new_user'] = true;
         }
-        $authenticator = $this->getMock('justso\\justauth\\PasswordAuthenticator', [], [], '', false);
+        $authenticator = $this->getMock('justso\\justauth\\Authenticator', [], [], '', false);
         $authenticator->expects($this->once())->method('getAuthInfo')->willReturn($info);
         $env->setDICEntry('Authenticator', function () use ($authenticator) {
             return $authenticator;

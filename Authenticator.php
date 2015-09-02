@@ -16,7 +16,7 @@ use justso\justapi\SystemEnvironmentInterface;
 /**
  * Class Authenticator
  */
-abstract class Authenticator
+class Authenticator
 {
     /**
      * @var SystemEnvironmentInterface
@@ -24,52 +24,20 @@ abstract class Authenticator
     protected $env;
 
     /**
+     * @var Session
+     */
+    private $session;
+
+    /**
      * @var array
      */
     private $authConf = null;
 
-    /**
-     * Current user
-     *
-     * @var UserInterface
-     */
-    protected $user = null;
-
-    /**
-     * Indicates that $this->user is only a clone of a 'real' user (normally coming from reading from the session)
-     * @var bool
-     */
-    protected $userIsCloned;
-
-    /**
-     * @var bool
-     */
-    protected $newUser = null;
-
-    /**
-     * @var bool
-     */
-    protected $needsActivation = null;
-
     public function __construct(SystemEnvironmentInterface $env)
     {
         $this->env = $env;
-        $this->needsActivation = $this->getAuthConf('needs-activation');
-        $session = $this->env->getSession();
-        if ($session->isValueSet('user')) {
-            $this->user = $session->getValue('user');
-            $this->userIsCloned = true;
-        }
+        $this->session = $env->newInstanceOf('Auth.Session');
     }
-
-    /**
-     * Finds the user in the storage and authenticates him with the given credentials.
-     *
-     * @param RequestHelper           $request
-     * @param UserRepositoryInterface $userRepository
-     * @throws NotFoundException
-     */
-    abstract protected function findUser(RequestHelper $request, UserRepositoryInterface $userRepository);
 
     /**
      * Authenticates a user via the provided credentials.
@@ -80,19 +48,31 @@ abstract class Authenticator
         $userRepository = $this->getUserRepository();
         $request = $this->env->getRequestHelper();
         try {
-            $this->findUser($request, $userRepository);
-            if ($this->needsActivation) {
-                $this->requestActivation($this->user, $request);
+            $user = $userRepository->getByEmail($request->getEMailParam('email'));
+            $password = $request->getParam('password', '', true);
+            if ($password === '') {
+                $this->requestActivation($user, $request);
+            } elseif ($user->checkPassword($password)) {
+                $this->session->loginUser($user);
+            } else {
+                $user = null;
             }
         } catch (NotFoundException $e) {
-            $this->newUser = true;
             if ($this->getAuthConf('auto-register')) {
-                $this->registerNewUser($request, $userRepository);
+                $user = $this->env->newInstanceOf('UserInterface');
+                $user->setFromRequest($request);
+                $userRepository->persist($user);
+
+                if ($this->getAuthConf('needs-activation')) {
+                    $this->requestActivation($user, $request);
+                } else {
+                    $user->setActive(true);
+                }
+                if ($this->getAuthConf('login-new-users')) {
+                    $this->session->loginUser($user, true);
+                }
             }
         }
-
-        $this->userIsCloned = false;
-        $this->env->getSession()->setValue('user', $this->user);
     }
 
     /**
@@ -102,10 +82,7 @@ abstract class Authenticator
      */
     public function isAuth()
     {
-        if ($this->user === null) {
-            return false;
-        }
-        return !$this->needsActivation || $this->user->getToken() == '';
+        return $this->session->isAuth();
     }
 
     /**
@@ -118,15 +95,14 @@ abstract class Authenticator
     public function activate($code)
     {
         $userRepository = $this->getUserRepository();
-        $this->user = $userRepository->getByAccessCode($code);
-        $url = $this->user->getDestination();
-        $this->getUserActivator()->activateUser($this->user);
-        $this->user->setToken(null);
-        $this->user->setDestination(null);
-        $this->user->setActive(true);
-        $userRepository->persist($this->user);
-        $this->userIsCloned = false;
-        $this->env->getSession()->setValue('user', $this->user);
+        $user = $userRepository->getByAccessCode($code);
+        $url = $user->getDestination();
+        $this->getUserActivator()->activateUser($user);
+        $user->setToken(null);
+        $user->setDestination(null);
+        $user->setActive(true);
+        $userRepository->persist($user);
+        $this->session->loginUser($user);
         return $url;
     }
 
@@ -142,14 +118,14 @@ abstract class Authenticator
         $code = md5(microtime());
         $user->setToken($code);
         $user->setDestination($request->getParam('page', '', true));
-        $userRepository->persist($this->user);
+        $userRepository->persist($user);
 
         $link = Bootstrap::getInstance()->getApiUrl() . '/activate?c=' . $code;
         $mailer = $this->getLoginNotificator();
-        $mailer->sendActivationLink($this->user, $link);
+        $mailer->sendActivationLink($user, $link);
 
         $activator = $this->env->newInstanceOf('UserActivatorInterface');
-        $activator->setInfo($code, $this->user, $request);
+        $activator->setInfo($code, $user, $request);
     }
 
     /**
@@ -180,28 +156,12 @@ abstract class Authenticator
     }
 
     /**
-     * @param RequestHelper $request
-     * @param UserRepositoryInterface $userRepository
-     */
-    private function registerNewUser(RequestHelper $request, UserRepositoryInterface $userRepository)
-    {
-        $this->user = $this->env->newInstanceOf('UserInterface');
-        $this->user->setFromRequest($request);
-        $this->newUser = true;
-        if ($this->needsActivation) {
-            $this->requestActivation($this->user, $request);
-        } else {
-            $this->user->setActive(true);
-        }
-        $userRepository->persist($this->user);
-    }
-
-    /**
      * @return int|null
      */
     public function getUserId()
     {
-        return $this->user !== null ? $this->user->getId() : null;
+        $user = $this->session->getCurrentUser();
+        return $user !== null ? $user->getId() : null;
     }
 
     /**
@@ -211,25 +171,26 @@ abstract class Authenticator
      */
     public function getUser()
     {
-        if ($this->user === null) {
+        $user = $this->session->getCurrentUser();
+        if ($user === null) {
             return null;
-        } elseif ($this->userIsCloned) {
-            $userRepo = $this->env->newInstanceOf('UserRepositoryInterface');
-            $this->user = $userRepo->getById($this->user->getId());
-            $this->userIsCloned = false;
         }
-        return $this->user;
+        if ($this->session->isCloned()) {
+            $userRepo = $this->env->newInstanceOf('UserRepositoryInterface');
+            $user = $userRepo->getById($user->getId());
+        }
+        return $user;
     }
 
     /**
-     * If a user is authenticated, the return value specifies if the user has just registered (in the same request).
+     * If a user is authenticated, the return value specifies if the user has just registered.
      * If no user is authenticated, the return value is null.
      *
      * @return bool|null
      */
     public function isNewUser()
     {
-        return $this->user !== null ? $this->newUser : null;
+        return $this->session->hasJustRegistered();
     }
 
     /**
@@ -240,7 +201,8 @@ abstract class Authenticator
      */
     public function isActivationPending()
     {
-        return $this->user !== null ? $this->user->getToken() != '' : null;
+        $user = $this->session->getCurrentUser();
+        return $user !== null ? $user->getToken() != '' : null;
     }
 
     /**
