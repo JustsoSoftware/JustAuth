@@ -43,6 +43,7 @@ class Session
     public function __construct(SystemEnvironmentInterface $env)
     {
         $this->env = $env;
+        /** @var \justso\justapi\Session $session */
         $session = $this->env->getSession();
         if ($session->isValueSet('user')) {
             $this->user = $session->getValue('user');
