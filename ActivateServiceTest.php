@@ -41,7 +41,9 @@ class ActivateServiceTest extends ServiceTestBase
         $env = $this->createTestEnvironment();
         $service = new Activate($env);
         $service->getAction();
+        // @codeCoverageIgnoreStart
     }
+    // @codeCoverageIgnoreEnd
 
     /**
      * @expectedException \justso\justapi\DenyException
@@ -54,5 +56,7 @@ class ActivateServiceTest extends ServiceTestBase
         $env->setDICEntry('Authenticator', $auth);
         $service = new Activate($env);
         $service->getAction();
+        // @codeCoverageIgnoreStart
     }
+    // @codeCoverageIgnoreEnd
 }
