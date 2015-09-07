@@ -15,6 +15,12 @@ use justso\justapi\testutil\TestEnvironment;
 
 class AuthenticatorTest extends ServiceTestBase
 {
+    /**
+     * Provides data for testRegister()
+     *
+     * @return array
+     * @codeCoverageIgnore
+     */
     public function provideRegisterParams()
     {
         return[
@@ -81,6 +87,22 @@ class AuthenticatorTest extends ServiceTestBase
         $this->assertFalse($authenticator->isNewUser());
     }
 
+    public function testLoginWithWrongPassword()
+    {
+        $env = $this->setupEnvironment(false, false, false);
+        $env->getRequestHelper()->fillWithData(['email' => 'test@justso.de', 'password' => 'wrong-password']);
+        $user = $this->mockInterface('justso\\justauth', 'UserInterface', $env);
+        $user->expects($this->once())->method('checkPassword')->with('wrong-password')->willReturn(false);
+        $repo = $this->mockInterface('justso\\justauth', 'UserRepositoryInterface', $env);
+        $repo->expects($this->once())->method('getByEmail')->with('test@justso.de')->willReturn($user);
+        $this->checkActivationLink(false, $env, $user);
+
+        $authenticator = new Authenticator($env);
+        $authenticator->auth();
+
+        $this->assertNull($authenticator->getUserId());
+    }
+
     public function testLoginWithActivationLink()
     {
         $env = $this->setupEnvironment(false, false, true);
@@ -131,6 +153,32 @@ class AuthenticatorTest extends ServiceTestBase
         $authenticator->auth();
 
         $this->assertNull($authenticator->getUserId());
+    }
+
+    public function testActivation()
+    {
+        $code = 'this-is-the-code';
+        $env = $this->setupEnvironment(false, false, true);
+
+        $user = $this->mockInterface('justso\\justauth', 'UserInterface', $env);
+        $user->expects($this->once())->method('getDestination')->willReturn('http://example.com');
+        $user->expects($this->once())->method('setToken')->with(null);
+        $user->expects($this->once())->method('setDestination')->with(null);
+        $user->expects($this->once())->method('setActive')->with(true);
+
+        $repo = $this->mockInterface('justso\\justauth', 'UserRepositoryInterface', $env);
+        $repo->expects($this->once())->method('getByAccessCode')->with($code)->willReturn($user);
+        $repo->expects($this->once())->method('persist')->with($user);
+
+        $activator = $this->mockInterface('justso\\justauth', 'UserActivatorInterface', $env);
+        $activator->expects($this->once())->method('activateUser')->with($user);
+
+        $session = $this->getMock('justso\\justauth\\Session', [], [], '', false);
+        $session->expects($this->once())->method('loginUser')->with($user);
+        $env->setDICEntry('Auth.Session', $session);
+
+        $authenticator = new Authenticator($env);
+        $authenticator->activate($code);
     }
 
     /**
