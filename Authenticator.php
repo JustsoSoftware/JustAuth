@@ -59,6 +59,7 @@ class Authenticator
             }
         } catch (NotFoundException $e) {
             if ($this->getAuthConf('auto-register')) {
+                /** @var UserInterface $user */
                 $user = $this->env->newInstanceOf('UserInterface');
                 $user->setFromRequest($request);
                 $userRepository->persist($user);
@@ -97,7 +98,7 @@ class Authenticator
         $userRepository = $this->getUserRepository();
         $user = $userRepository->getByAccessCode($code);
         $url = $user->getDestination();
-        $this->getUserActivator()->activateUser($user);
+        $this->getLoginNotificator()->activateUser($user);
         $user->setToken(null);
         $user->setDestination(null);
         $user->setActive(true);
@@ -121,11 +122,7 @@ class Authenticator
         $userRepository->persist($user);
 
         $link = Bootstrap::getInstance()->getApiUrl() . '/activate?c=' . $code;
-        $mailer = $this->getLoginNotificator();
-        $mailer->sendActivationLink($user, $link);
-
-        $activator = $this->env->newInstanceOf('UserActivatorInterface');
-        $activator->setInfo($code, $user, $request);
+        $this->getLoginNotificator()->sendActivation($user, $code, $link, $request);
     }
 
     /**
@@ -219,14 +216,6 @@ class Authenticator
     private function getLoginNotificator()
     {
         return $this->env->newInstanceOf('LoginNotificatorInterface');
-    }
-
-    /**
-     * @return UserActivatorInterface
-     */
-    private function getUserActivator()
-    {
-        return $this->env->newInstanceOf('UserActivatorInterface');
     }
 
     /**

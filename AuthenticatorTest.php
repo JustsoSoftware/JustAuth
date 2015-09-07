@@ -120,7 +120,7 @@ class AuthenticatorTest extends ServiceTestBase
     }
 
     /**
-     * Mock LoginNotificatorInterface and UserActivatorInterface
+     * Mock LoginNotificatorInterface
      *
      * @param bool            $needsActivation
      * @param TestEnvironment $env
@@ -129,13 +129,10 @@ class AuthenticatorTest extends ServiceTestBase
     private function checkActivationLink($needsActivation, TestEnvironment $env, UserInterface $user)
     {
         $notiMock = $this->mockInterface('justso\\justauth', 'LoginNotificatorInterface', $env);
-        $actiMock = $this->mockInterface('justso\\justauth', 'UserActivatorInterface', $env);
         if ($needsActivation) {
-            $notiMock->expects($this->once())->method('sendActivationLink')->with($user);
-            $actiMock->expects($this->once())->method('setInfo');
+            $notiMock->expects($this->once())->method('sendActivation')->with($user);
         } else {
-            $notiMock->expects($this->never())->method('sendActivationLink');
-            $actiMock->expects($this->never())->method('setInfo');
+            $notiMock->expects($this->never())->method('sendActivation');
         }
     }
 
@@ -170,7 +167,7 @@ class AuthenticatorTest extends ServiceTestBase
         $repo->expects($this->once())->method('getByAccessCode')->with($code)->willReturn($user);
         $repo->expects($this->once())->method('persist')->with($user);
 
-        $activator = $this->mockInterface('justso\\justauth', 'UserActivatorInterface', $env);
+        $activator = $this->mockInterface('justso\\justauth', 'LoginNotificatorInterface', $env);
         $activator->expects($this->once())->method('activateUser')->with($user);
 
         $session = $this->getMock('justso\\justauth\\Session', [], [], '', false);
