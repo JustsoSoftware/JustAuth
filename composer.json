@@ -1,0 +1,21 @@
+{
+  "name": "justso/justauth",
+  "type": "library",
+  "description": "Simple authentication library.",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Joachim Schirrmacher",
+      "email": "j.schirrmacher@justso.de",
+      "homepage": "http://digital-wachsen.de",
+      "role": "Developer"
+    }
+  ],
+  "require": {
+    "php": ">=5.4.0",
+    "justso/justapi": "1.x"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "4.x"
+  }
+}
