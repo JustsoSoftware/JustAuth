@@ -243,4 +243,12 @@ class Authenticator
         }
         return $result;
     }
+
+    /**
+     * Log out current user
+     */
+    public function logout()
+    {
+        $this->session->logoutCurrentUser();
+    }
 }

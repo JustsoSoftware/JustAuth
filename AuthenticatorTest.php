@@ -178,6 +178,22 @@ class AuthenticatorTest extends ServiceTestBase
         $authenticator->activate($code);
     }
 
+    public function testLogout()
+    {
+        $env = $this->setupEnvironment(false, false, true);
+        $user = $this->mockInterface('justso\\justauth', 'UserInterface', $env);
+        $user->expects($this->any())->method('getId')->willReturn(123);
+        $user->expects($this->never())->method('setFromRequest');
+        $repo = $this->mockInterface('justso\\justauth', 'UserRepositoryInterface', $env);
+        $repo->expects($this->once())->method('getByEmail')->with('test@justso.de')->willReturn($user);
+        $this->checkActivationLink(true, $env, $user);
+
+        $authenticator = new Authenticator($env);
+        $authenticator->auth();
+        $authenticator->logout();
+        $this->assertNull($authenticator->getUserId());
+    }
+
     /**
      * Setup test environment
      *

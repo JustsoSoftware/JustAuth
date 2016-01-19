@@ -60,6 +60,22 @@ class LoginServiceTest extends ServiceTestBase
         $this->checkResult($env, $id, $activationPending, $newUser);
     }
 
+    public function testLogout()
+    {
+        $env = $this->createTestEnvironment();
+
+        $service = new Login($env);
+        $authenticator = $this->getMock('justso\\justauth\\Authenticator', [], [], '', false);
+        $authenticator->expects($this->once())->method('auth');
+        $authenticator->expects($this->once())->method('logout');
+        $env->setDICEntry('Authenticator', function () use ($authenticator) {
+            return $authenticator;
+        });
+        $service->deleteAction();
+        $this->assertJSONHeader($env);
+        $this->assertSame('logged-out', json_decode($env->getResponseContent(), true));
+    }
+
     /**
      * @param int $id
      * @param bool $activationPending

@@ -44,6 +44,14 @@ class Login extends RestService
         $this->environment->sendJSONResult($authenticator->getAuthInfo());
     }
 
+    public function deleteAction()
+    {
+        $authenticator = $this->getAuthenticator();
+        $authenticator->auth();
+        $authenticator->logout();
+        $this->environment->sendJSONResult('logged-out');
+    }
+
     /**
      * @return Authenticator
      */

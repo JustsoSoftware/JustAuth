@@ -51,6 +51,7 @@ class Session
             $this->isCloned = true;
         }
     }
+
     public function loginUser(UserInterface $user, $justRegistered = false)
     {
         $this->user = $user;
@@ -60,6 +61,15 @@ class Session
         $session->setValue('user', $user);
         $session->setValue('justRegistered', $justRegistered);
         $this->isCloned = false;
+    }
+
+    public function logoutCurrentUser()
+    {
+        $session = $this->env->getSession();
+        $session->unsetValue('user');
+        $session->unsetValue('justRegistered');
+        $this->justRegistered = null;
+        $this->user = null;
     }
 
     /**
