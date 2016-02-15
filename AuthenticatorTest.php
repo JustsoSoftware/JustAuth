@@ -76,8 +76,7 @@ class AuthenticatorTest extends ServiceTestBase
         $user->expects($this->any())->method('getId')->willReturn(123);
         $user->expects($this->once())->method('checkPassword')->with('test123')->willReturn(true);
         $user->expects($this->never())->method('setFromRequest');
-        $repo = $this->mockInterface('justso\\justauth', 'UserRepositoryInterface', $env);
-        $repo->expects($this->once())->method('getByEmail')->with('test@justso.de')->willReturn($user);
+        $this->mockUserRepository($env, $user);
         $this->checkActivationLink(false, $env, $user);
 
         $authenticator = new Authenticator($env);
@@ -93,8 +92,7 @@ class AuthenticatorTest extends ServiceTestBase
         $env->getRequestHelper()->fillWithData(['email' => 'test@justso.de', 'password' => 'wrong-password']);
         $user = $this->mockInterface('justso\\justauth', 'UserInterface', $env);
         $user->expects($this->once())->method('checkPassword')->with('wrong-password')->willReturn(false);
-        $repo = $this->mockInterface('justso\\justauth', 'UserRepositoryInterface', $env);
-        $repo->expects($this->once())->method('getByEmail')->with('test@justso.de')->willReturn($user);
+        $this->mockUserRepository($env, $user);
         $this->checkActivationLink(false, $env, $user);
 
         $authenticator = new Authenticator($env);
@@ -109,8 +107,7 @@ class AuthenticatorTest extends ServiceTestBase
         $user = $this->mockInterface('justso\\justauth', 'UserInterface', $env);
         $user->expects($this->any())->method('getId')->willReturn(123);
         $user->expects($this->never())->method('setFromRequest');
-        $repo = $this->mockInterface('justso\\justauth', 'UserRepositoryInterface', $env);
-        $repo->expects($this->once())->method('getByEmail')->with('test@justso.de')->willReturn($user);
+        $this->mockUserRepository($env, $user);
         $this->checkActivationLink(true, $env, $user);
 
         $authenticator = new Authenticator($env);
@@ -142,9 +139,7 @@ class AuthenticatorTest extends ServiceTestBase
     public function testLoginWithUnknownUser()
     {
         $env = $this->setupEnvironment(false, false, false);
-        $repo = $this->mockInterface('justso\\justauth', 'UserRepositoryInterface', $env);
-        $repo->expects($this->once())->method('getByEmail')
-            ->with('test@justso.de')->willThrowException(new NotFoundException());
+        $this->mockUserRepository($env);
 
         $authenticator = new Authenticator($env);
         $authenticator->auth();
@@ -184,8 +179,7 @@ class AuthenticatorTest extends ServiceTestBase
         $user = $this->mockInterface('justso\\justauth', 'UserInterface', $env);
         $user->expects($this->any())->method('getId')->willReturn(123);
         $user->expects($this->never())->method('setFromRequest');
-        $repo = $this->mockInterface('justso\\justauth', 'UserRepositoryInterface', $env);
-        $repo->expects($this->once())->method('getByEmail')->with('test@justso.de')->willReturn($user);
+        $this->mockUserRepository($env, $user);
         $this->checkActivationLink(true, $env, $user);
 
         $authenticator = new Authenticator($env);
@@ -221,5 +215,20 @@ class AuthenticatorTest extends ServiceTestBase
         Bootstrap::getInstance()->setTestConfiguration('/my/approot', $config);
         $env->setDICEntry('Auth.Session', 'justso\\justauth\\Session');
         return $env;
+    }
+
+    /**
+     * @param $env
+     * @param $user
+     */
+    private function mockUserRepository(TestEnvironment $env, UserInterface $user = null)
+    {
+        $repo = $this->mockInterface('justso\\justauth', 'UserRepositoryInterface', $env);
+        $mocker = $repo->expects($this->once())->method('getByEmail')->with('test@justso.de');
+        if ($user === null) {
+            $mocker->willThrowException(new NotFoundException());
+        } else {
+            $mocker->willReturn($user);
+        }
     }
 }
