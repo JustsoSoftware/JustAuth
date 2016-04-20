@@ -47,8 +47,9 @@ class Login extends RestService
     public function deleteAction()
     {
         $authenticator = $this->getAuthenticator();
-        $authenticator->auth();
-        $authenticator->logout();
+        if ($authenticator->isAuth()) {
+            $authenticator->logout();
+        }
         $this->environment->sendJSONResult('logged-out');
     }
 
