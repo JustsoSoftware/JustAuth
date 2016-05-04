@@ -3,12 +3,11 @@
 Simple authentication library.
 
 It supports registration, login and forgotten passwords. You can use password based or password-less auth.
-Password-less auth works with 
 
 ## Installation
 
 ### Composer
-  composer require justso/justauth:1.*
+  composer require justso/justauth
 
 ### git
   git clone git://github.com/JustsoSoftware/JustAuth.git vendor/justso/justauth
@@ -17,6 +16,7 @@ Password-less auth works with
 
 In config.json you can set the following entries:
 
+```
 {
   "auth": {
     "auto-register": true,
