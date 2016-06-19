@@ -47,6 +47,7 @@ class Authenticator
     {
         $userRepository = $this->getUserRepository();
         $request = $this->env->getRequestHelper();
+        $user = null;
         try {
             $user = $userRepository->getByEmail($request->getEMailParam('email'));
             $password = $request->getParam('password', '', true);
@@ -74,6 +75,7 @@ class Authenticator
                 }
             }
         }
+        return $user;
     }
 
     /**
