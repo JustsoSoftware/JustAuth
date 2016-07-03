@@ -212,7 +212,7 @@ class AuthenticatorTest extends ServiceTestBase
                 'login-new-users' => $autoLogin
             ]
         ];
-        Bootstrap::getInstance()->setTestConfiguration('/my/approot', $config);
+        $env->getBootstrap()->setTestConfiguration('/my/approot', $config);
         $env->setDICEntry('Auth.Session', 'justso\\justauth\\Session');
         return $env;
     }

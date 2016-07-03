@@ -19,12 +19,12 @@ class ActivateServiceTest extends ServiceTestBase
 {
     public function testActivation()
     {
+        $env = $this->createTestEnvironment(['c' => '12345']);
         $conf = ['environments' => ['test' => [
             'approot' => '/approot',
             'appurl' => 'http://example.com'
         ]]];
-        Bootstrap::getInstance()->setTestConfiguration('/approot', $conf);
-        $env = $this->createTestEnvironment(['c' => '12345']);
+        $env->getBootstrap()->setTestConfiguration('/approot', $conf);
         $auth = $this->getMock('\justso\justauth\Authenticator', [], [], '', false);
         $auth->expects($this->once())->method('activate')->with('12345')->willReturn('dest');
         $env->setDICEntry('Authenticator', $auth);
