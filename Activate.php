@@ -24,7 +24,10 @@ class Activate extends RestService
             $code = $this->environment->getRequestHelper()->getHexParam('c');
             $authenticator = $this->getAuthenticator();
             $url = $authenticator->activate($code);
-            $this->environment->sendHeader('Location: ' . Bootstrap::getInstance()->getWebAppUrl() . '/' . $url);
+            if (strpos($url, '/') !== 0) {
+                $url = '/' . $url;
+            }
+            $this->environment->sendHeader('Location: ' . Bootstrap::getInstance()->getWebAppUrl() . $url);
         } catch (NotFoundException $e) {
             throw new DenyException(
                 "Invalid Activation Code\n\nMake sure you use the same browser for activating as " .
