@@ -34,7 +34,7 @@ class AuthServiceTestBase extends ServiceTestBase
      */
     protected function setAuthenticatedUser(TestEnvironment $env, UserInterface $user)
     {
-        $authenticator = $this->getMock('\justso\justauth\Authenticator', [], [], '', false);
+        $authenticator = $this->createMock('\justso\justauth\Authenticator');
         $authenticator->expects($this->any())->method('isAuth')->willReturn(true);
         $authenticator->expects($this->any())->method('getUser')->willReturn($user);
         $authenticator->expects($this->any())->method('getUserId')->willReturn($user->getId());

@@ -65,7 +65,7 @@ class LoginServiceTest extends ServiceTestBase
         $env = $this->createTestEnvironment();
 
         $service = new Login($env);
-        $authenticator = $this->getMock('justso\\justauth\\Authenticator', [], [], '', false);
+        $authenticator = $this->createMock('justso\\justauth\\Authenticator');
         $authenticator->expects($this->once())->method('isAuth')->willReturn(true);
         $authenticator->expects($this->once())->method('logout');
         $env->setDICEntry('Authenticator', function () use ($authenticator) {
@@ -92,7 +92,7 @@ class LoginServiceTest extends ServiceTestBase
         if ($newUser) {
             $info['new_user'] = true;
         }
-        $authenticator = $this->getMock('justso\\justauth\\Authenticator', [], [], '', false);
+        $authenticator = $this->createMock('justso\\justauth\\Authenticator');
         $authenticator->expects($this->once())->method('getAuthInfo')->willReturn($info);
         $env->setDICEntry('Authenticator', function () use ($authenticator) {
             return $authenticator;

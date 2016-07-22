@@ -25,7 +25,7 @@ class ActivateServiceTest extends ServiceTestBase
             'appurl' => 'http://example.com'
         ]]];
         $env->getBootstrap()->setTestConfiguration('/approot', $conf);
-        $auth = $this->getMock('\justso\justauth\Authenticator', [], [], '', false);
+        $auth = $this->createMock('\justso\justauth\Authenticator');
         $auth->expects($this->once())->method('activate')->with('12345')->willReturn('dest');
         $env->setDICEntry('Authenticator', $auth);
         $service = new Activate($env);
@@ -51,7 +51,7 @@ class ActivateServiceTest extends ServiceTestBase
     public function testWrongActivationCode()
     {
         $env = $this->createTestEnvironment(['c' => '12345']);
-        $auth = $this->getMock('\justso\justauth\Authenticator', [], [], '', false);
+        $auth = $this->createMock('\justso\justauth\Authenticator');
         $auth->expects($this->once())->method('activate')->with('12345')->willThrowException(new NotFoundException());
         $env->setDICEntry('Authenticator', $auth);
         $service = new Activate($env);

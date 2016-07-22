@@ -165,7 +165,7 @@ class AuthenticatorTest extends ServiceTestBase
         $activator = $this->mockInterface('justso\\justauth', 'LoginNotificatorInterface', $env);
         $activator->expects($this->once())->method('activateUser')->with($user);
 
-        $session = $this->getMock('justso\\justauth\\Session', [], [], '', false);
+        $session = $this->createMock('justso\\justauth\\Session');
         $session->expects($this->once())->method('loginUser')->with($user);
         $env->setDICEntry('Auth.Session', $session);
 
