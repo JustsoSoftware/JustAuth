@@ -99,8 +99,8 @@ class Authenticator
     {
         $userRepository = $this->getUserRepository();
         $user = $userRepository->getByAccessCode($code);
-        $url = $user->getDestination();
         $this->getLoginNotificator()->activateUser($user);
+        $url = $user->getDestination();
         $user->setToken(null);
         $user->setDestination(null);
         $user->setActive(true);
