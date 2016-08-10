@@ -36,7 +36,7 @@ class Authenticator
     public function __construct(SystemEnvironmentInterface $env)
     {
         $this->env = $env;
-        $this->session = $env->newInstanceOf('Auth.Session');
+        $this->session = $env->getDIC()->get('Auth.Session');
     }
 
     /**
@@ -61,7 +61,7 @@ class Authenticator
         } catch (NotFoundException $e) {
             if ($this->getAuthConf('auto-register')) {
                 /** @var UserInterface $user */
-                $user = $this->env->newInstanceOf('UserInterface');
+                $user = $this->env->getDIC()->get('UserInterface');
                 $user->setFromRequest($request);
                 $userRepository->persist($user);
 
@@ -122,8 +122,9 @@ class Authenticator
         $user->setToken($code);
         $user->setDestination($request->getParam('page', '', true));
         $userRepository->persist($user);
+        $this->session->loginUser($user, true);
 
-        $link = Bootstrap::getInstance()->getApiUrl() . '/activate?c=' . $code;
+        $link = $this->env->getBootstrap()->getApiUrl() . '/activate?c=' . $code;
         $this->getLoginNotificator()->sendActivation($user, $code, $link, $request);
     }
 
@@ -137,7 +138,7 @@ class Authenticator
     protected function getAuthConf($name, $default = false)
     {
         if ($this->authConf === null) {
-            $config = Bootstrap::getInstance()->getConfiguration();
+            $config = $this->env->getBootstrap()->getConfiguration();
             if (!isset($config['auth'])) {
                 $this->authConf = [
                     'auto-register'    => true,
@@ -175,7 +176,8 @@ class Authenticator
             return null;
         }
         if ($this->session->isCloned()) {
-            $userRepo = $this->env->newInstanceOf('UserRepositoryInterface');
+            /** @var UserRepositoryInterface $userRepo */
+            $userRepo = $this->env->getDIC()->get('UserRepositoryInterface');
             $user = $userRepo->getById($user->getId());
         }
         return $user;
@@ -209,7 +211,7 @@ class Authenticator
      */
     private function getUserRepository()
     {
-        return $this->env->newInstanceOf('UserRepositoryInterface');
+        return $this->env->getDIC()->get('UserRepositoryInterface');
     }
 
     /**
@@ -217,7 +219,7 @@ class Authenticator
      */
     private function getLoginNotificator()
     {
-        return $this->env->newInstanceOf('LoginNotificatorInterface');
+        return $this->env->getDIC()->get('LoginNotificatorInterface');
     }
 
     /**
@@ -228,7 +230,7 @@ class Authenticator
     public function getAuthInfo()
     {
         $activationPending = $this->isActivationPending();
-        $newUser = $this->isNewUser();
+        $newUser = $this->isNewUser() && $this->getAuthConf('login-new-users');
 
         $result = [
             'errors' => [],
