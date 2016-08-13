@@ -8,7 +8,6 @@
 
 namespace justso\justauth;
 
-use justso\justapi\Bootstrap;
 use justso\justapi\NotFoundException;
 use justso\justapi\RequestHelper;
 use justso\justapi\SystemEnvironmentInterface;
@@ -85,7 +84,7 @@ class Authenticator
      */
     public function isAuth()
     {
-        return $this->session->isAuth();
+        return $this->session->isAuth() && !($this->getAuthConf('needs-activation') && $this->isActivationPending());
     }
 
     /**

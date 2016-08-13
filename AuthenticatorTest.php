@@ -50,6 +50,9 @@ class AuthenticatorTest extends ServiceTestBase
             if ($requireActivation) {
                 $user->expects($this->once())->method('setToken');
             }
+            if (!$autoLogin) {
+                $user->expects($this->any())->method('getToken')->willReturn('token');
+            }
             $user->expects($this->once())->method('setFromRequest');
         } else {
             $user->expects($this->never())->method('setFromRequest');
