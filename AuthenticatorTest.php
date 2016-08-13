@@ -8,7 +8,6 @@
 
 namespace justso\justauth;
 
-use justso\justapi\Bootstrap;
 use justso\justapi\NotFoundException;
 use justso\justapi\testutil\ServiceTestBase;
 use justso\justapi\testutil\TestEnvironment;
@@ -94,21 +93,6 @@ class AuthenticatorTest extends ServiceTestBase
         $user->expects($this->once())->method('checkPassword')->with('wrong-password')->willReturn(false);
         $this->mockUserRepository($env, $user);
         $this->checkActivationLink(false, $env, $user);
-
-        $authenticator = new Authenticator($env);
-        $authenticator->auth();
-
-        $this->assertNull($authenticator->getUserId());
-    }
-
-    public function testLoginWithActivationLink()
-    {
-        $env = $this->setupEnvironment(false, false, true);
-        $user = $this->mockInterface('justso\\justauth', 'UserInterface', $env);
-        $user->expects($this->any())->method('getId')->willReturn(123);
-        $user->expects($this->never())->method('setFromRequest');
-        $this->mockUserRepository($env, $user);
-        $this->checkActivationLink(true, $env, $user);
 
         $authenticator = new Authenticator($env);
         $authenticator->auth();
