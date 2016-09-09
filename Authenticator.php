@@ -32,6 +32,8 @@ class Authenticator
      */
     private $authConf = null;
 
+    private $errors = [];
+
     public function __construct(SystemEnvironmentInterface $env)
     {
         $this->env = $env;
@@ -56,6 +58,7 @@ class Authenticator
                 $this->session->loginUser($user);
             } else {
                 $user = null;
+                $this->errors[] = 'auth-failed';
             }
         } catch (NotFoundException $e) {
             if ($this->getAuthConf('auto-register')) {
@@ -72,6 +75,8 @@ class Authenticator
                 if ($this->getAuthConf('login-new-users')) {
                     $this->session->loginUser($user, true);
                 }
+            } else {
+                $this->errors[] = 'auth-failed';
             }
         }
         return $user;
@@ -232,9 +237,10 @@ class Authenticator
         $newUser = $this->isNewUser() && $this->getAuthConf('login-new-users');
 
         $result = [
-            'errors' => [],
+            'errors' => $this->errors,
             'userid' => null
         ];
+        $this->errors = [];
         if ($newUser) {
             $result['new_user'] = true;
         }
