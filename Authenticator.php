@@ -249,6 +249,9 @@ class Authenticator
         }
         if (!$activationPending || $newUser) {
             $result['userid'] = $this->getUserId();
+            if ($this->getUserId()) {
+                $result['username'] = $this->getUser()->getFullName();
+            }
         }
         return $result;
     }

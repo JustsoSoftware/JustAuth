@@ -31,6 +31,13 @@ interface UserInterface
     public function getId();
 
     /**
+     * Returns the full name of the user or an empty string if the name is not (yet) known.
+     *
+     * @return string
+     */
+    public function getFullName();
+
+    /**
      * Returns the e-mail address of the user.
      *
      * @return string
