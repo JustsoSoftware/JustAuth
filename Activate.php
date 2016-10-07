@@ -41,6 +41,6 @@ class Activate extends RestService
      */
     private function getAuthenticator()
     {
-        return $this->environment->newInstanceOf('Authenticator');
+        return $this->environment->getDIC()->get('Authenticator');
     }
 }
