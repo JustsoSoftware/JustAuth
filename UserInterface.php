@@ -20,8 +20,16 @@ interface UserInterface
      * Sets user data from request.
      *
      * @param RequestHelper $request
+     * @deprecated Use setFromArray() instead
      */
     public function setFromRequest(RequestHelper $request);
+
+    /**
+     * Sets user data from an array.
+     *
+     * @param array $data
+     */
+    public function setFromArray(array $data);
 
     /**
      * Returns the id of the user.
