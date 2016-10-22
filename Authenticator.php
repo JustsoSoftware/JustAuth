@@ -122,7 +122,7 @@ class Authenticator
     private function requestActivation(UserInterface $user, RequestHelper $request)
     {
         $userRepository = $this->getUserRepository();
-        $code = md5(microtime());
+        $code = bin2hex(openssl_random_pseudo_bytes(20));
         $user->setToken($code);
         $user->setDestination($request->getParam('page', '', true));
         $userRepository->persist($user);
