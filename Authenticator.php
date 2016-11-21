@@ -105,8 +105,8 @@ class Authenticator
         $user = $userRepository->getByAccessCode($code);
         $this->getLoginNotificator()->activateUser($user);
         $url = $user->getDestination();
-        $user->setToken(null);
-        $user->setDestination(null);
+        //$user->setToken(null);
+        //$user->setDestination(null);
         $user->setActive(true);
         $userRepository->persist($user);
         $this->session->loginUser($user);
@@ -207,7 +207,7 @@ class Authenticator
     public function isActivationPending()
     {
         $user = $this->session->getCurrentUser();
-        return $user !== null ? $user->getToken() != '' : null;
+        return $user !== null ? !$user->isActive() : null;
     }
 
     /**
